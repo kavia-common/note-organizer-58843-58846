@@ -106,10 +106,13 @@ export const NotesProvider = ({ children }) => {
     async function loadRemote() {
       const cfg = getSupabaseConfig();
       // eslint-disable-next-line no-console
-      console.log('[Notes] Supabase configured:', isSupabaseConfigured, 'config:', cfg, 'user_id:', userId);
+      console.log('[Notes] Supabase configured:', Boolean(isSupabaseConfigured), 'config:', cfg, 'user_id:', userId);
       if (!isSupabaseConfigured) {
         // eslint-disable-next-line no-console
         console.log('[Notes] Supabase not configured. Using local cache only.');
+        if (cfg?.hint) {
+          console.warn('[Notes] Supabase env hint:', cfg.hint);
+        }
         return;
       }
       try {

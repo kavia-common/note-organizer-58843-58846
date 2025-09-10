@@ -10,12 +10,22 @@ import { createClient } from '@supabase/supabase-js';
 const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
 
+// Detect common misconfiguration where REACT_APP_SUPABASE_KEY is set instead of REACT_APP_SUPABASE_ANON_KEY
+const SUPABASE_KEY_MISCONFIG = process.env.REACT_APP_SUPABASE_KEY && !SUPABASE_ANON_KEY;
+
 export const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 
 // PUBLIC_INTERFACE
 export function getSupabaseClient() {
   /** Returns a Supabase client if configured, otherwise throws an error. */
   if (!isSupabaseConfigured) {
+    // eslint-disable-next-line no-console
+    if (SUPABASE_KEY_MISCONFIG) {
+      console.warn(
+        '[Supabase] Detected REACT_APP_SUPABASE_KEY but missing REACT_APP_SUPABASE_ANON_KEY. ' +
+          'Please rename your env var to REACT_APP_SUPABASE_ANON_KEY as documented in assets/supabase.md.'
+      );
+    }
     const missing = [];
     if (!SUPABASE_URL) missing.push('REACT_APP_SUPABASE_URL');
     if (!SUPABASE_ANON_KEY) missing.push('REACT_APP_SUPABASE_ANON_KEY');
@@ -44,6 +54,10 @@ export function getSupabaseConfig() {
         return null;
       }
     })(),
+    // Include hint when a common misconfiguration is present
+    hint: SUPABASE_KEY_MISCONFIG
+      ? 'REACT_APP_SUPABASE_KEY is set but REACT_APP_SUPABASE_ANON_KEY is missing. Rename your env variable.'
+      : null,
   };
 }
 
