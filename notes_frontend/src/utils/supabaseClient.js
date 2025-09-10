@@ -16,9 +16,35 @@ export const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 export function getSupabaseClient() {
   /** Returns a Supabase client if configured, otherwise throws an error. */
   if (!isSupabaseConfigured) {
-    throw new Error('Supabase is not configured. Set REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_ANON_KEY.');
+    const missing = [];
+    if (!SUPABASE_URL) missing.push('REACT_APP_SUPABASE_URL');
+    if (!SUPABASE_ANON_KEY) missing.push('REACT_APP_SUPABASE_ANON_KEY');
+    throw new Error(
+      `Supabase is not configured. Missing ${missing.join(
+        ', '
+      )}. Set them in notes_frontend/.env.`
+    );
   }
   return createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
+
+/**
+ * PUBLIC_INTERFACE
+ * Expose current Supabase config for diagnostics (safe: no secrets beyond anon key presence).
+ * Use only for logging/debug UI.
+ */
+export function getSupabaseConfig() {
+  return {
+    hasUrl: Boolean(SUPABASE_URL),
+    hasAnonKey: Boolean(SUPABASE_ANON_KEY),
+    urlHost: (() => {
+      try {
+        return SUPABASE_URL ? new URL(SUPABASE_URL).host : null;
+      } catch {
+        return null;
+      }
+    })(),
+  };
 }
 
 /**

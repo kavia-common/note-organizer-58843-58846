@@ -2,7 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { uuid } from '../utils/uuid';
 import { filterAndSortNotes } from '../utils/filters';
-import { isSupabaseConfigured, sbDeleteNote, sbFetchNotes, sbUpsertNote } from '../utils/supabaseClient';
+import { isSupabaseConfigured, sbDeleteNote, sbFetchNotes, sbUpsertNote, getSupabaseConfig } from '../utils/supabaseClient';
 
 /**
  * Types:
@@ -104,9 +104,18 @@ export const NotesProvider = ({ children }) => {
   useEffect(() => {
     let cancelled = false;
     async function loadRemote() {
-      if (!isSupabaseConfigured) return;
+      const cfg = getSupabaseConfig();
+      // eslint-disable-next-line no-console
+      console.log('[Notes] Supabase configured:', isSupabaseConfigured, 'config:', cfg, 'user_id:', userId);
+      if (!isSupabaseConfigured) {
+        // eslint-disable-next-line no-console
+        console.log('[Notes] Supabase not configured. Using local cache only.');
+        return;
+      }
       try {
         const remoteNotes = await sbFetchNotes(userId);
+        // eslint-disable-next-line no-console
+        console.log('[Notes] Fetched notes from Supabase:', remoteNotes?.length ?? 0);
         if (!cancelled) {
           dispatch({ type: 'SET_NOTES', notes: remoteNotes });
           // cache them locally as well for offline-ish behavior
@@ -115,7 +124,7 @@ export const NotesProvider = ({ children }) => {
       } catch (e) {
         // Non-fatal: fallback to local cached state
         // eslint-disable-next-line no-console
-        console.warn('Failed to fetch notes from Supabase:', e?.message || e);
+        console.warn('[Notes] Failed to fetch notes from Supabase:', e?.message || e);
       }
     }
     loadRemote();
